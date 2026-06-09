@@ -16,40 +16,40 @@ const int INF = 0x3f3f3f3f;
 // Algoritmo de Dijkstra
 typedef long long ll;
 const ll LINF = 1e18;
-const int MAX = 1e5 + 5;
+const int MAX = 4000 + 5;
 
-ll d[MAX];
-vector<tuple<int, int>> g[MAX]; // {vizinho, peso}
-int N;
+ll d[MAX][27];
+vector<tuple<int, int,char>> g[MAX]; // {vizinho, peso}
+int M;
 
 unordered_map<string,int> wordMap;
-void dijkstra(int v) {
-    for (int i = 0; i < N; i++)
-        d[i] = LINF;
+void dijkstra(int v,int n) {
+    for (int i = 0; i < n; i++){
+        for(int j=0; j < 27;j++){
+            d[i][j] = LINF;
+        }
+    }
 
-    d[v] = 0;
-    priority_queue<pair<ll, int>> pq;
-    pq.emplace(0, v);
+    d[v][0] = 0;
+    priority_queue<tuple<ll, int,char>> pq;
+    pq.emplace(0, v,'0');
 
     while (!pq.empty()) {
-        auto [ndist, u] = pq.top(); pq.pop();
-        if (-ndist > d[u]) continue;
-        int wordIndex=0;
+        auto [ndist, u,initialChar] = pq.top(); pq.pop();
+        int u_estado = (initialChar == '0')? 0 : initialChar - 'a' + 1;
 
-        for (auto [idx, w] : g[u]) {
-            
-            string word1,word2;
-            for (const auto& [key, value] : wordMap){
-                if (value == u){
-                    word1 = key;
+        if(-ndist > d[u][u_estado])
+            continue;
+
+        for (auto [idx, w,firstL] : g[u]) {
+
+            int prox_estado = firstL - 'a' + 1;            
+
+            if(initialChar == '0' || firstL != initialChar){
+                if (d[idx][prox_estado] > d[u][u_estado] + w) {
+                    d[idx][prox_estado] = d[u][u_estado] + w;
+                    pq.emplace(-d[idx][prox_estado], idx,firstL);
                 }
-                else if (value == idx){
-                    word2 = key;
-                }
-            }
-            if (d[idx] > d[u] + w && word1[0] != word2[0]) {
-                d[idx] = d[u] + w;
-                pq.emplace(-d[idx], idx);
             }
         }
     }
@@ -61,7 +61,7 @@ int main() {
     int id=0;
     int origem,destino;
 
-    while(cin >> N && N !=0){
+    while(cin >> M && M !=0){
       string idioma1,idioma2,p;
 
       cin >> idioma1;
@@ -75,7 +75,7 @@ int main() {
       destino = id;
       id++;
 
-      for(int i=0; i < N;i++){
+      for(int i=0; i < M;i++){
         cin >> idioma1;
         cin >> idioma2;
         cin >> p;
@@ -90,8 +90,8 @@ int main() {
           id++;
         }
 
-        g[wordMap[idioma1]].push_back({wordMap[idioma2],p.size()});
-        g[wordMap[idioma2]].push_back({wordMap[idioma1],p.size()});
+        g[wordMap[idioma1]].push_back({wordMap[idioma2],p.size(),p[0]});
+        g[wordMap[idioma2]].push_back({wordMap[idioma1],p.size(),p[0]});
       }
 
       // for(auto const& [k,v] : map){
@@ -102,17 +102,24 @@ int main() {
       //     cout << i << " -> " << v << " (weight " << w << ")\n";
       //   }
       // }
-      dijkstra(origem);
+      dijkstra(origem,id);
 
       // for(int i=0; i < N;i++){
       //   cout << i << " = "<< d[i] << endl;
       // }
+      //
+      ll val = LINF;
+      for(int i=0; i < 27;i++){
+          if(d[destino][i] < val){
+              val = d[destino][i];
+          }
+      }
 
-      if(d[destino] == LINF){
+      if(val == LINF){
           cout << "impossivel" << endl;
       }
       else{
-          cout << d[destino] << endl;
+          cout << val << endl;
       }
       wordMap.clear();
       id = 0;
